@@ -35,16 +35,17 @@ resetWatchdog(1000 * 60);
 login(email, password, mainLoop);
 
 function mainLoop() {
-    resetWatchdog(1000 * 60 * 6);
+    resetWatchdog(1000 * 60);
     loge("Main loop.");
     var attributes = getAttributesUnsafe();
-    if (attributes.actions.value > 15) {
+    if (attributes.actions.value > 5) {
         getInventory(function(inventory) {
             for (;; itemIndex = (itemIndex + 1) % items.length) {
                 var item = items[itemIndex];
                 if (inventory[item] > 50) {
                     loge("Found " + inventory[item] + " x " + item + ". Converting...")
                     clickInventoryItem(item, function() {
+                        loge("Clicked item...");
                         clickStorylet(itemActions[item], function() {
                             loge("Converted. Results: " + getResults());
                             itemIndex = (itemIndex + 1) % items.length;
