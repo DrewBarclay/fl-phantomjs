@@ -37,27 +37,40 @@ function mainLoop() {
         return;
     }
 
-    acceptAllMessages(function() {
-        loge("Messages accepted.");
-        getMessagesFromYou(function(messages) {
-            loge("Pending messages: " + messages.length);
-            getCards(function(cards) {
-                loge("Cards: " + JSON.stringify(cards));
-                var attributes = getAttributesUnsafe();
-                loge("Attributes: " + JSON.stringify(attributes));
+    var attributes = getAttributesUnsafe();
+    getMessagesToYou(function(messages) {
+        var pending = messages.filter(function(msg) {
+            return msg.indexOf("would like you to tell the Constables that they were somewhere else on the night in question") > -1;
+        }).length;
 
-                var allFuncs = [getChances, handleSuspicion, considerPromenade];
+        if (attributes.suspicion.cp + pending < 36) {
+            acceptAllMessages(function() { loge("All messages accepted."); mainLoop2(); });
+        } else {
+            loge("Messages NOT accepted; suspicion too high.");
+            mainLoop2();
+        }
+    });
+}
 
-                for (var i = 0; i < allFuncs.length; i++) {
-                    if (allFuncs[i](cards, messages, attributes, mainLoop)) {
-                        return; //Func has decided to take control
-                    }
+function mainLoop2() {
+    getMessagesFromYou(function(messages) {
+        loge("Pending messages: " + messages.length);
+        getCards(function(cards) {
+            loge("Cards: " + JSON.stringify(cards));
+            var attributes = getAttributesUnsafe();
+            loge("Attributes: " + JSON.stringify(attributes));
+
+            var allFuncs = [getChances, handleSuspicion, considerPromenade];
+
+            for (var i = 0; i < allFuncs.length; i++) {
+                if (allFuncs[i](cards, messages, attributes, mainLoop)) {
+                    return; //Func has decided to take control
                 }
+            }
 
-                drawCards(function(cards) {
-                    loge("Drew cards. Cards: " + JSON.stringify(cards));
-                    handleCards(cards);
-                });
+            drawCards(function(cards) {
+                loge("Drew cards. Cards: " + JSON.stringify(cards));
+                handleCards(cards);
             });
         });
     });
