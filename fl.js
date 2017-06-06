@@ -19,7 +19,7 @@ resetWatchdog(1000 * 60); //In a minute, exit unless we successfully log in.
 login(email, password, mainLoop);
 
 function mainLoop() {
-    resetWatchdog(1000 * 60 * 6);
+    resetWatchdog(1000 * 60 * 2);
     loge("Main loop.");
     loge("Current Location: " + getLocation());
 
@@ -54,9 +54,7 @@ function mainLoop() {
 
 function mainLoop2() {
     getMessagesFromYou(function(messages) {
-        loge("Pending messages: " + messages.length);
         getCards(function(cards) {
-            loge("Cards: " + JSON.stringify(cards));
             var attributes = getAttributesUnsafe();
             loge("Attributes: " + JSON.stringify(attributes));
 

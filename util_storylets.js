@@ -18,7 +18,7 @@ function handleSuspicion(cards, messages, attributes, callback) {
                 count--;
 
                 goToStory(function() {
-                    clickStorylet('Find a way to throw the Constables off the scent', function() {
+                    clickStorylet('Invite a friend to join you in something shadowy!', function() {
                         clickStorylet('Ask a friend to cover for you', function() {
                             choosePlayer(buddy, function() {
                                 loge("Request sent.");
@@ -147,11 +147,10 @@ function inviteCoffee(callback) {
 }
 
 function inviteChess(callback) {
-    loge("Inviting someone for chess!");
     clickStorylet('Invite a friend to join you in something terribly intellectual', function() {
         clickStorylet('Invite someone to a Game of Chess', function() {
             choosePlayer(buddy, function() {
-                loge("Player invited for chess!");
+                loge(buddy + " invited for chess!");
                 callback();
             });
         });
@@ -179,6 +178,12 @@ function inviteLoiter(callback) {
                 callback();
             });
         });
+    });
+}
+
+function everyStone(callback) {
+    clickStorylet('Invite a friend to join you in something terribly intellectual', function() {
+        clickStorylet('Every stone', callback);
     });
 }
 

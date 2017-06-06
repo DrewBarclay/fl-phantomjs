@@ -45,7 +45,6 @@ function mainLoop() {
                 if (inventory[item] > 50) {
                     loge("Found " + inventory[item] + " x " + item + ". Converting...")
                     clickInventoryItem(item, function() {
-                        loge("Clicked item...");
                         clickStorylet(itemActions[item], function() {
                             loge("Converted. Results: " + getResults());
                             itemIndex = (itemIndex + 1) % items.length;
