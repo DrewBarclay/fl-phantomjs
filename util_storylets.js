@@ -1,70 +1,53 @@
-function handleSuspicion(cards, messages, attributes, callback) {
-    if (attributes.suspicion.total >= 4) {
-        var pending = messages.filter(function(msg) {
-            return msg.indexOf("a Request for an Alibi") > -1;
-        }).length;
-
-        //4 suspicion is 10 cp, each pending is 4 cp removed
-        var needed = Math.round((attributes.suspicion.cp - 10.0)/4 + 0.5);
-        if (pending < needed) {
-            var count = needed - pending;
-            loge("Suspicion high, sending " + count + " requests...");
-            var requestFunc = function() {
-                if (count == 0) {
-                    callback();
-                    return;
-                }
-
-                count--;
-
-                goToStory(function() {
-                    clickStorylet('Invite a friend to join you in something shadowy!', function() {
-                        clickStorylet('Ask a friend to cover for you', function() {
-                            choosePlayer(buddy, function() {
-                                loge("Request sent.");
-                                requestFunc();
-                            });
-                        });
+function handleSuspicion(callback) {
+    var attributes = getAttributesUnsafe();
+    if (attributes.suspicion.total >= 3) {
+        goToStory(function() {
+            clickStorylet('Attend to Matters of Shadows and Suspicion', function() {
+                clickStorylet('Ask a friend to cover for you', function() {
+                    choosePlayer(buddy, function() {
+                        loge(buddy + " invited to help with suspicion.");
+                        callback();
                     });
                 });
-            };
-            requestFunc();
-            return true; 
-        }
+            });
+        });
+    } else {
+        callback();
     }
-
-    return false;
 }
 
-function getChances(cards, messages, attributes, callback) {
-    //Now check pending... 
-    var stats = [   {chances: attributes.persuasive.secondChances, pendingText: 'a Coffee at Caligula', inviteFunc: inviteCoffee}, 
-                    {chances: attributes.watchful.secondChances, pendingText: 'a Game of Chess', inviteFunc: inviteChess}, 
-                    {chances: attributes.dangerous.secondChances, pendingText: 'a Sparring Bout' , inviteFunc: inviteSpar}, 
-                    {chances: attributes.shadowy.secondChances, pendingText: 'a spot of Suspicious Loitering', inviteFunc: inviteLoiter}
-                ];
-
-    for (var i = 0; i < stats.length; i++) {
-        var stat = stats[i];
-
-        var pending = messages.filter(function(msg) {
-            return msg.indexOf(stat.pendingText) > -1;
-        }).length;
-
-        if (pending + stat.chances < 2) {
-            //Send them! 
-            goToStory(function() { 
-                stat.inviteFunc( function() { 
-                    goToStory(function() { 
-                        stat.inviteFunc(callback) 
-                    }); 
-                }); 
-            });
-            return true; 
-        }
+//Do not call this directly
+function handleSecondChancesR(stats, callback) {
+    if (stats.length == 0) {
+        callback();
+        return;
     }
 
-    return false; //everything is just dandy with our stats
+    var stat = stats.pop(); //todo this pattern of popping comes up everywhere write an abstraction function
+
+    if (stat.chances < 2) {
+        //Send a request!
+        goToStory(function() { 
+            stat.inviteFunc(function() { 
+                handleSecondChancesR(stats, callback);
+            }); 
+        });
+    } else {
+        handleSecondChancesR(stats, callback);
+    }
+}
+
+function handleSecondChances(callback) {
+    var attributes = getAttributesUnsafe();
+
+    //Now check pending... 
+    var stats = [   {chances: attributes.persuasive.secondChances, inviteFunc: inviteCoffee}, 
+                    {chances: attributes.watchful.secondChances, inviteFunc: inviteChess}, 
+                    {chances: attributes.dangerous.secondChances, inviteFunc: inviteSpar}, 
+                    {chances: attributes.shadowy.secondChances, inviteFunc: inviteLoiter}
+                ];
+
+    handleSecondChancesR(stats, callback);
 }
 
 //The Alleys of Spite 
@@ -72,27 +55,28 @@ function getChances(cards, messages, attributes, callback) {
 //goToStory - hit onwards actually
 //The Tenterhooks
 //goToStory
-function considerPromenade(cards, messages, attributes, callback) {
-    if (attributes.suspicion.total < 4 && attributes.actions.value > 15 && cards.waiting <= 2 && cards.waiting >= 1) {
-        //Let's go for a promenade and refresh our opportunity cards!
-        loge("Going to pickpocket to refresh cards.");
-        travelTo('Spite', function() {
-            clickStorylet('The Alleys of Spite', function() {
-                clickStorylet("The Pickpocket's Promenade!", function() {
-                    goToStorySimple(function() {
-                        clickStorylet('The Tenterhooks', function() {
-                            loge("Entered the promenade.");
-                            handlePromenade(callback);
-                            return;
+function considerPromenade(callback) {
+    var attributes = getAttributesUnsafe();
+    getCards(function(cards) {
+        if (attributes.suspicion.total < 3 && attributes.actions.value > 18 && cards.waiting <= 2 && cards.waiting >= 1) {
+            //Let's go for a promenade and refresh our opportunity cards!
+            loge("Going to pickpocket to refresh cards.");
+            travelTo('Spite', function() {
+                clickStorylet('The Alleys of Spite', function() {
+                    clickStorylet("The Pickpocket's Promenade!", function() {
+                        goToStorySimple(function() {
+                            clickStorylet('The Tenterhooks', function() {
+                                loge("Entered the promenade.");
+                                handlePromenade(callback);
+                            });
                         });
                     });
                 });
             });
-        });
-        return true;
-    }
-
-    return false;
+        } else {
+            callback();
+        }
+    });
 }
 
 //Stop and consider
@@ -135,11 +119,10 @@ function handlePromenade(callback) {
 }
 
 function inviteCoffee(callback) {
-    loge("Inviting someone for coffee...");
-    clickStorylet('Attend to matters of society and scandal', function() {
+    clickStorylet('Attend to Matters of Persuasion and Scandal', function() {
         clickStorylet("Meet someone for a Coffee at Caligula's", function() {
             choosePlayer(buddy, function() {
-                loge("Invited to coffee.");
+                loge(buddy + " invited for coffee!");
                 callback();
             });
         });
@@ -147,7 +130,7 @@ function inviteCoffee(callback) {
 }
 
 function inviteChess(callback) {
-    clickStorylet('Invite a friend to join you in something terribly intellectual', function() {
+    clickStorylet('Attend to Matters of Watchfulness and Nightmares', function() {
         clickStorylet('Invite someone to a Game of Chess', function() {
             choosePlayer(buddy, function() {
                 loge(buddy + " invited for chess!");
@@ -158,11 +141,10 @@ function inviteChess(callback) {
 }
 
 function inviteSpar(callback) {
-    loge("Inviting someone to spar!");
-    clickStorylet('Invite a friend to join you in something potentially dangerous', function() {
+    clickStorylet('Attend to Matters of Danger and Wounds', function() {
         clickStorylet('Invite someone to a Sparring Bout', function() {
             choosePlayer(buddy, function() {
-                loge("Player invited for sparring!");
+                loge(buddy + " invited for sparring!");
                 callback();
             });
         });
@@ -170,11 +152,10 @@ function inviteSpar(callback) {
 }
 
 function inviteLoiter(callback) {
-    loge("Inviting someone to loiter!");
-    clickStorylet('Invite a friend to join you in something rather shadowy', function() {
+    clickStorylet('Attend to Matters of Shadows and Suspicion', function() {
         clickStorylet('Invite someone to a spot of Suspicious Loitering', function() {
             choosePlayer(buddy, function() {
-                loge("Player invited for loitering!");
+                loge(buddy + " invited for loitering!");
                 callback();
             });
         });
@@ -182,7 +163,7 @@ function inviteLoiter(callback) {
 }
 
 function everyStone(callback) {
-    clickStorylet('Invite a friend to join you in something terribly intellectual', function() {
+    clickStorylet('Attend to Matters of Watchfulness and Nightmares', function() {
         clickStorylet('Every stone', callback);
     });
 }

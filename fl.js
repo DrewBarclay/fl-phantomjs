@@ -38,38 +38,26 @@ function mainLoop() {
     }
 
     var attributes = getAttributesUnsafe();
-    getMessagesToYou(function(messages) {
-        var pending = messages.filter(function(msg) {
-            return msg.indexOf("would like you to tell the Constables that they were somewhere else on the night in question") > -1;
-        }).length;
-
-        if (attributes.suspicion.cp + pending < 36) {
-            acceptAllMessages(function() { loge("All messages accepted."); mainLoop2(); });
-        } else {
-            loge("Messages NOT accepted; suspicion too high.");
-            mainLoop2();
-        }
+    acceptAllMessages(function() { 
+        loge("All messages accepted."); 
+        mainLoop2(); 
     });
 }
 
 function mainLoop2() {
-    getMessagesFromYou(function(messages) {
-        getCards(function(cards) {
-            var attributes = getAttributesUnsafe();
-            loge("Attributes: " + JSON.stringify(attributes));
+    var attributes = getAttributesUnsafe();
+    loge("Attributes: " + JSON.stringify(attributes));
 
-            var allFuncs = [getChances, handleSuspicion, considerPromenade];
+    handleSecondChances(function() {
+        handleSuspicion(cardsLoop);
+    });
+}
 
-            for (var i = 0; i < allFuncs.length; i++) {
-                if (allFuncs[i](cards, messages, attributes, mainLoop)) {
-                    return; //Func has decided to take control
-                }
-            }
-
-            drawCards(function(cards) {
-                loge("Drew cards. Cards: " + JSON.stringify(cards));
-                handleCards(cards);
-            });
+function cardsLoop() {
+    considerPromenade(function() {
+        drawCards(function(cards) {
+            loge("Drew cards. Cards: " + JSON.stringify(cards));
+            handleCards(cards);
         });
     });
 }
@@ -89,7 +77,7 @@ function handleCards(cards) {
 
     if (cards.hand.length == 0) {
         if (cards.waiting > 0) {
-            mainLoop();
+            cardsLoop();
             return;
         } else {
             exit();
@@ -111,6 +99,10 @@ function handleCards(cards) {
             });
         });
         return;
+    } else if (card == "A Banner with a Strange Device") {
+        handleCards(cards);
+        return;
+        //Do nothing; manual intervention
     } else {
         loge("Discarding card: " + card);
         discardCard(card, function() { handleCards(cards); });
