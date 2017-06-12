@@ -58,7 +58,7 @@ function handleSecondChances(callback) {
 function considerPromenade(callback) {
     var attributes = getAttributesUnsafe();
     getCards(function(cards) {
-        if (attributes.suspicion.total < 3 && attributes.actions.value > 18 && cards.waiting <= 2 && cards.waiting >= 1) {
+        if (attributes.suspicion.total < 3 && attributes.actions.value > 16 && cards.waiting <= 2 && cards.waiting >= 1) {
             //Let's go for a promenade and refresh our opportunity cards!
             loge("Going to pickpocket to refresh cards.");
             travelTo('Spite', function() {
@@ -193,11 +193,12 @@ function handleGift(callback) {
     if (attributes.watchful.secondChances >= 2 && attributes.shadowy.secondChances >= 2 && attributes.dangerous.secondChances >= 2 && attributes.persuasive.secondChances >= 2) {
         clickCard("Give a Gift! A commotion in the Square of Lofty Words", function() {
             clickStorylet('The gift of admiration', function() {
-                choosePlayer(receiver, function() { reloadPage(callback) });
+                choosePlayer(receiver, callback);
             });
         });
     } else {
         loge("Not enough second chances to use gift!");
+        callback();
     }
 }
 
