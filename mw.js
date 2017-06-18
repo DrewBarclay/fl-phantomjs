@@ -46,7 +46,11 @@ function mainLoop() {
                     loge("Found " + inventory[item] + " x " + item + ". Converting...")
                     clickInventoryItem(item, function() {
                         clickStorylet(itemActions[item], function() {
-                            loge("Converted. Results: " + getResults());
+                            loge("Converted. Results: ");
+                            var results = getResults();
+                            for (var i = 0; i < results.length; i++) {
+                                console.log("   " + results[i]);
+                            }
                             itemIndex = (itemIndex + 1) % items.length;
                             stateSaver.save(itemIndex);
                             mainLoop();
